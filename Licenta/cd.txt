@@ -1,0 +1,55 @@
+import RPi.GPIO as GPIO
+from mfrc522 import SimpleMFRC522
+import time
+
+# Initialize the RFID reader
+reader = SimpleMFRC522()
+
+# Block to write data
+blockNum = 2
+blockData = bytearray("Andreea", 'utf-8') + bytearray([0] * (16 - len("Andreea")))
+
+# Function to write data to a block
+def write_data_to_block(blockNum, blockData):
+    try:
+        reader.write_no_block(blockData)
+        print("Data was written into Block successfully")
+    except Exception as e:
+        print("Writing to Block failed:", e)
+
+# Function to read data from a block
+def read_data_from_block():
+    try:
+        id, text = reader.read_no_block()
+        print("Block was read successfully")
+        return text
+    except Exception as e:
+        print("Reading failed:", e)
+        return None
+
+# Main loop
+try:
+    print("Scan a MIFARE 1K Tag to write data...")
+    while True:
+        id, text = reader.read()
+        if id:
+            print("\n**Card Detected**")
+            # Print UID of the Card
+            print("Card UID:", id)
+
+            # Write data to the block
+            print("\nWriting to Data Block...")
+            write_data_to_block(blockNum, blockData)
+
+            # Read data from the same block
+            print("\nReading from Data Block...")
+            readBlockData = read_data_from_block()
+
+            # Print the data read from block
+            if readBlockData:
+                print("\nData in Block", blockNum, "-->", readBlockData)
+
+            break
+
+finally:
+    GPIO.cleanup()

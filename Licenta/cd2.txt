@@ -1,0 +1,69 @@
+import RPi.GPIO as GPIO
+from mfrc522 import SimpleMFRC522
+import requests
+import time
+
+# Constants
+SSID = "PIKA"
+PASSWORD = "0755692228"
+SHEET_URL = "ENTER_YOUR_SHEET_URL"
+FINGERPRINT = "9a879b82e9197e638adb67eda709d92f30dee73c"
+BLOCK_NUM = 2
+
+# Initialize the RFID reader
+reader = SimpleMFRC522()
+
+# Function to read data from a block
+def read_data_from_block(reader, block_num):
+    reader.MFRC522_SelectTag(reader.uid)
+    status = reader.MFRC522_Auth(reader.MFRC522_AUTHENT1A, block_num, reader.KEY, reader.uid)
+    if status != reader.MI_OK:
+        print("Authentication failed for Read:", status)
+        return None
+
+    status, data = reader.MFRC522_Read(block_num)
+    if status != reader.MI_OK:
+        print("Reading failed:", status)
+        return None
+    else:
+        print("Block was read successfully")
+        return data
+
+# Function to handle HTTPS GET request
+def send_https_request(url, fingerprint):
+    response = requests.get(url, verify=False)
+    if response.status_code == 200:
+        print(f"HTTPS GET... code: {response.status_code}")
+    else:
+        print(f"HTTPS GET... failed, error: {response.status_code}")
+    return response.status_code
+
+# Main loop
+try:
+    print("Scan a Tag to write data...")
+    while True:
+        print("Place your card to the reader")
+        reader.MFRC522_Init()
+        
+        try:
+            id, text = reader.read()
+        except Exception as e:
+            continue
+
+        print("\n**Card Detected**")
+        print("Card UID:", id)
+        
+        print("\nReading last data from RFID...")
+        read_block_data = read_data_from_block(reader, BLOCK_NUM)
+
+        if read_block_data:
+            print(f"Last data in RFID block {BLOCK_NUM} --> {read_block_data}")
+
+            card_holder_name = SHEET_URL + str(read_block_data)
+            card_holder_name = card_holder_name.strip()
+            print(card_holder_name)
+
+            if send_https_request(card_holder_name, FINGERPRINT) == 200:
+                time.sleep(1)
+finally:
+    GPIO.cleanup()

@@ -1,0 +1,127 @@
+Pentru a implementa un sistem de prezență bazat pe RFID utilizând NodeMCU ESP32 și modulul RFID PN532, urmează pașii de mai jos. Aceste detalii vor fi utile pentru includerea în prezentarea ta. 
+
+
+
+Componente Necesare:
+
+NodeMCU ESP32 
+Modul RFID PN532 
+Google Sheets pentru stocarea datelor 
+Acces la internet pentru ESP32 
+
+Pași necesari
+ 
+1. Configurare Hardware 
+Conexiuni între ESP32 și PN532: 
+I2C Mode  
+SDA -> GPIO 21 
+SCL -> GPIO 22 
+VCC -> 3.3V 
+GND -> GND 
+
+2. Configurare Software 
+a. Biblioteci Necesare:
+
+#include <Wire.h>  
+#include <Adafruit_PN532.h> 
+#include <WiFi.h> 
+#include <HTTPClient.h> 
+
+b. Configurarea Conexiunii WiFi:
+
+const char* ssid = "Your_SSID";  
+const char* password = "Your_PASSWORD"; 
+
+c. Autentificarea și Conectarea la Google Sheets:
+ 
+Utilizeazând Google Sheets API se permite plăcuței ESP32 să trimită date 
+ 
+d. Codul pentru Citirea RFID și Trimiterea Datelor:
+
+Adafruit_PN532 nfc(21, 22); 
+  
+void setup(void) { 
+  Serial.begin(115200); 
+  Serial.println("Hello!"); 
+  
+  nfc.begin(); 
+  uint32_t versiondata = nfc.getFirmwareVersion(); 
+  if (!versiondata) { 
+    Serial.print("Didn't find PN53x board"); 
+    while (1); 
+  } 
+  
+  nfc.SAMConfig(); 
+  Serial.println("Waiting for an NFC card ..."); 
+  
+  WiFi.begin(ssid, password); 
+  while (WiFi.status() != WL_CONNECTED) { 
+    delay(1000); 
+    Serial.println("Connecting to WiFi..."); 
+  } 
+  Serial.println("Connected to WiFi"); 
+} 
+  
+void loop(void) { 
+  uint8_t success; 
+  uint8_t uid[] = { 0, 0, 0, 0, 0, 0, 0 }; 
+  uint8_t uidLength; 
+  
+  success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength); 
+  
+  if (success) { 
+    Serial.println("Found an NFC card!"); 
+    Serial.print("UID Length: ");Serial.print(uidLength, DEC);Serial.println(" bytes"); 
+    Serial.print("UID Value: "); 
+    String cardID = ""; 
+    for (uint8_t i = 0; i < uidLength; i++) { 
+      Serial.print(" 0x");Serial.print(uid[i], HEX); 
+      cardID += String(uid[i], HEX); 
+    } 
+    Serial.println(""); 
+  
+    // Trimite datele către Google Sheets 
+    sendToGoogleSheets(cardID); 
+  
+    delay(1000); 
+  } 
+} 
+  
+void sendToGoogleSheets(String cardID) { 
+  if (WiFi.status() == WL_CONNECTED) { 
+    HTTPClient http; 
+    http.begin("https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec"); 
+    http.addHeader("Content-Type", "application/x-www-form-urlencoded"); 
+  
+    String httpRequestData = "cardID=" + cardID + "&action=insert"; 
+    int httpResponseCode = http.POST(httpRequestData); 
+  
+    if (httpResponseCode > 0) { 
+      String response = http.getString(); 
+      Serial.println(response); 
+    } else { 
+      Serial.print("Error on sending POST: "); 
+      Serial.println(httpResponseCode); 
+    } 
+    http.end(); 
+  } else { 
+    Serial.println("WiFi Disconnected"); 
+  } 
+} 
+ 
+3. Configurarea Google Sheets 
+
+Se deschide Google Sheets și creează o nouă foaie de calcul. 
+Se creează un script Google Apps 
+ 
+function doPost(e){ 
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Sheet1"); 
+  var data = e.parameter; 
+  sheet.appendRow([data.cardID, new Date()]); 
+  return ContentService.createTextOutput("Success"); 
+} 
+ 
+Beneficii și Avantaje 
+Eficiență: Automatizarea procesului de prezență elimină erorile manuale. 
+Accesibilitate: Datele sunt disponibile în timp real și accesibile de oriunde cu acces la internet. 
+Scalabilitate: Sistemul poate fi extins pentru a include funcții suplimentare, cum ar fi notificările prin e-mail sau integrarea cu alte platforme. 
