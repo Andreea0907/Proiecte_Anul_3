@@ -1,0 +1,111 @@
+1.Se citeste un numar natural N. Se citesc de la tastatura N numere intregi
+intr-o matrice patratica a. Sa se afiseze daca matricea are toate elementele diferite intre ele.
+   O sol. simpla: copiem matricea intr-un vector
+
+  function afisMatrice(matrice) {
+            let container = document.getElementById("matrice-container");
+            let table = document.createElement("table");
+
+            for (let i = 0; i < matrice.length; i++) {
+                let row = document.createElement("tr");
+
+                for (let j = 0; j < matrice[i].length; j++) {
+                    let cell = document.createElement("td");
+                    cell.textContent = matrice[i][j];
+                    row.appendChild(cell);
+                }
+
+                table.appendChild(row);
+            }
+
+            container.appendChild(table);
+        }
+
+        function areElemDif(matrice) {
+            let vector = [];
+            for (let i = 0; i < matrice.length; i++) {
+                for (let j = 0; j < matrice[i].length; j++) {
+                    vector.push(matrice[i][j]);
+                }
+            }
+
+            let frecventa = {};
+            for (let i = 0; i < vector.length; i++) {
+                if (frecventa[vector[i]] === undefined) {
+                    frecventa[vector[i]] = 1;
+                } else {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        let N;
+        do {
+            N = parseInt(prompt("Introduceți dimensiunea matricei:"));
+        } while (isNaN(N) || N <= 0);
+
+        let matrice = [];
+
+        for (let i = 0; i < N; i++) {
+            let rand = [];
+            for (let j = 0; j < N; j++) {
+                rand.push(parseInt(prompt(`Introduceți elementul de pe poziția ${i},${j}:`)));
+            }
+            matrice.push(rand);
+        }
+
+        console.log("Matricea introdusă este:");
+        console.log(matrice);
+
+        afisMatrice(matrice);
+
+        let rezultat = document.getElementById("rezultat");
+        if (areElemDif(matrice)) {
+            rezultat.textContent = "Toate elementele matricei sunt diferite între ele.";
+        } else {
+            rezultat.textContent = "Elementele matricei nu sunt diferite intre ele.";
+        }
+
+
+
+2.  SE citeste un numar natural N. Citim N numere intregi intr-un vector. Afisati cea mai mare cifra a numerelor din vector.
+Ex:{12,564,802,77}
+Raspuns: 8
+
+function ceaMaiMareCifra(vector) {
+            let ceaMaiMare = -Infinity;
+
+            for (let i = 0; i < vector.length; i++) {
+                let numar = Math.abs(vector[i]);
+                let cifre = numar.toString().split('');
+
+                for (let j = 0; j < cifre.length; j++) {
+                    let cifra = parseInt(cifre[j]);
+
+                    if (cifra > ceaMaiMare) {
+                        ceaMaiMare = cifra;
+                    }
+                }
+            }
+
+            return ceaMaiMare;
+        }
+
+     
+        let N = parseInt(prompt("Introduceți numărul de elemente din vector:"));
+        let vector = [];
+
+        for (let i = 0; i < N; i++) {
+            let numar = parseInt(prompt(`Introduceți elementul ${i + 1} din vector:`));
+            vector.push(numar);
+        }
+
+        
+        let rezultat = document.getElementById("rezultat");
+        let maxCifra = ceaMaiMareCifra(vector);
+        rezultat.textContent = "Cea mai mare cifră din vector este: " + maxCifra;
+
+	console.log("Cea mai mare cifra este:");
+	console.log(maxCifra);
